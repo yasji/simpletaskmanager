@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}My Tasks{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-4">
+    <h1>My Tasks</h1>
+    <div>
+        <a href="{% url 'task_create' %}" class="btn btn-primary">Add New Task</a>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ todo_count }}</div>
+        <div class="stat-label">To Do</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ in_progress_count }}</div>
+        <div class="stat-label">In Progress</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ done_count }}</div>
+        <div class="stat-label">Done</div>
+    </div>
+</div>
+
+{% if tasks %}
+<div class="task-grid">
+    {% for task in tasks %}
+    <div class="card {% if task.status == 'TODO' %}border-todo{% elif task.status == 'IN_PROGRESS' %}border-in-progress{% else %}border-done{% endif %}">
+        <div class="flex justify-between items-center mb-2">
+            <h2>{{ task.title }}</h2>
+            <span class="badge {% if task.status == 'TODO' %}badge-todo{% elif task.status == 'IN_PROGRESS' %}badge-in-progress{% else %}badge-done{% endif %}">
+                {{ task.get_status_display }}
+            </span>
+        </div>
+        <p class="text-sm mb-4">{{ task.description|truncatechars:100 }}</p>
+        {% if task.due_date %}
+        <p class="text-sm text-muted">
+            Due: {{ task.due_date|date:"F j, Y H:i" }}
+        </p>
+        {% endif %}
+        <div class="flex gap-2 mt-4">
+            <a href="{% url 'task_detail' task.pk %}" class="btn btn-secondary">View</a>
+            <a href="{% url 'task_edit' task.pk %}" class="btn btn-secondary">Edit</a>
+            <a href="{% url 'task_delete' task.pk %}" class="btn btn-destructive">Delete</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <p>You don't have any tasks yet.</p>
+    <a href="{% url 'task_create' %}" class="btn btn-primary mt-4">Create your first task</a>
+</div>
+{% endif %}
+
+{% endblock %}

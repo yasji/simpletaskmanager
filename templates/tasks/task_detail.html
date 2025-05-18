@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-4">
+    <h1>{{ task.title }}</h1>
+    <div>
+        <a href="{% url 'task_list' %}" class="btn btn-secondary">Back to Tasks</a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="mb-4">
+        <span class="badge {% if task.status == 'TODO' %}badge-todo{% elif task.status == 'IN_PROGRESS' %}badge-in-progress{% else %}badge-done{% endif %}">
+            {{ task.get_status_display }}
+        </span>
+    </div>
+    
+    <div class="mb-4">
+        <h2 class="text-sm text-muted">Description</h2>
+        <p class="mt-2">{{ task.description|default:"No description provided"|linebreaks }}</p>
+    </div>
+    
+    <div class="mb-4">
+        <h2 class="text-sm text-muted">Due Date</h2>
+        <p class="mt-2">{{ task.due_date|date:"F j, Y H:i"|default:"No due date" }}</p>
+    </div>
+    
+    <div class="mb-4">
+        <h2 class="text-sm text-muted">Responsible Person</h2>
+        <p class="mt-2">{{ task.responsible.username }}</p>
+    </div>
+
+    <div class="mb-4">
+        <h2 class="text-sm text-muted">Created</h2>
+        <p class="mt-2">{{ task.created_at|date:"F j, Y H:i" }}</p>
+    </div>
+    
+    <div class="mb-4">
+        <h2 class="text-sm text-muted">Last Updated</h2>
+        <p class="mt-2">{{ task.updated_at|date:"F j, Y H:i" }}</p>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+        <a href="{% url 'task_edit' task.pk %}" class="btn btn-primary">Edit Task</a>
+        <a href="{% url 'task_delete' task.pk %}" class="btn btn-destructive">Delete Task</a>
+    </div>
+</div>
+{% endblock %}
