@@ -61,3 +61,252 @@
     </form>
 </div>
 {% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{# ==================== HIDDEN SNIPPETS FOR EXAM REFERENCE ==================== #}
+{# 
+==== 1. MODEL DEFINITION SNIPPET ====
+from django.db import models
+from django.contrib.auth.models import User
+
+class ExampleModel(models.Model):
+    # Basic field types
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # Relationship fields
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="examples")
+    tags = models.ManyToManyField('Tag', blank=True, related_name="examples")
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "ExampleModels"
+    
+    def __str__(self):
+        return self.name
+        
+    # Optional: Custom methods
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('example_detail', kwargs={'pk': self.pk})
+#}
+
+{# 
+==== 2. FORMS SNIPPET ====
+from django import forms
+from .models import ExampleModel
+
+class ExampleForm(forms.ModelForm):
+    # Custom field overrides (outside Meta)
+    extra_field = forms.CharField(required=False, help_text="Optional extra information")
+    date_field = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+    
+    class Meta:
+        model = ExampleModel
+        fields = ['name', 'description', 'is_active', 'price', 'tags']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'tags': forms.CheckboxSelectMultiple(),
+        }
+        labels = {
+            'is_active': 'Active Status',
+        }
+        help_texts = {
+            'name': 'Enter a unique name',
+        }
+        
+    def clean_name(self):
+        # Custom validation example
+        name = self.cleaned_data.get('name')
+        if len(name) < 3:
+            raise forms.ValidationError("Name must be at least 3 characters long")
+        return name
+#}
+
+{# 
+==== 3. VIEWS SNIPPET - Function Based ====
+# List View
+def example_list(request):
+    objects = ExampleModel.objects.filter(user=request.user)
+    context = {'objects': objects}
+    return render(request, 'example_list.html', context)
+
+# Detail View
+def example_detail(request, pk):
+    obj = get_object_or_404(ExampleModel, pk=pk, user=request.user)
+    return render(request, 'example_detail.html', {'object': obj})
+
+# Create View
+@login_required
+def example_create(request):
+    if request.method == 'POST':
+        form = ExampleForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.user = request.user
+            obj.save()
+            form.save_m2m()  # Save many-to-many relationships
+            messages.success(request, 'Created successfully!')
+            return redirect('example_list')
+    else:
+        form = ExampleForm()
+    
+    return render(request, 'example_form.html', {'form': form, 'title': 'Create New'})
+
+# Update View
+@login_required
+def example_update(request, pk):
+    obj = get_object_or_404(ExampleModel, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        form = ExampleForm(request.POST, request.FILES, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Updated successfully!')
+            return redirect('example_list')
+    else:
+        form = ExampleForm(instance=obj)
+    
+    return render(request, 'example_form.html', {'form': form, 'title': 'Edit'})
+
+# Delete View
+@login_required
+def example_delete(request, pk):
+    obj = get_object_or_404(ExampleModel, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        obj.delete()
+        messages.success(request, 'Deleted successfully!')
+        return redirect('example_list')
+    
+    return render(request, 'example_confirm_delete.html', {'object': obj})
+#}
+
+{#
+==== 4. URLS SNIPPET ====
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('examples/', views.example_list, name='example_list'),
+    path('examples/create/', views.example_create, name='example_create'),
+    path('examples/<int:pk>/', views.example_detail, name='example_detail'),
+    path('examples/<int:pk>/edit/', views.example_update, name='example_update'),
+    path('examples/<int:pk>/delete/', views.example_delete, name='example_delete'),
+]
+#}
+
+{#
+==== 5. TEMPLATE SNIPPETS ====
+
+# List Template
+{% comment %} <h1>All Items</h1>
+<a href="{% url 'example_create' %}" class="btn btn-primary">Add New</a>
+
+{% if objects %}
+    <div class="grid">
+        {% for object in objects %}
+            <div class="card">
+                <h2>{{ object.name }}</h2>
+                <p>{{ object.description|truncatechars:100 }}</p>
+                <div class="btn-group">
+                    <a href="{% url 'example_detail' object.pk %}" class="btn btn-secondary">View</a>
+                    <a href="{% url 'example_update' object.pk %}" class="btn btn-primary">Edit</a>
+                    <a href="{% url 'example_delete' object.pk %}" class="btn btn-destructive">Delete</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <p>No items found.</p>
+{% endif %}
+
+# Form Template
+<h1>{{ title }}</h1>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    {% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}
+            <div class="errorlist">
+                {% for error in field.errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        {% if field.help_text %}
+            <p class="form-text">{{ field.help_text }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{% url 'example_list' %}" class="btn btn-secondary">Cancel</a>
+    </div>
+</form>
+
+# Delete Confirmation Template
+<h1>Delete {{ object.name }}</h1>
+<div class="card">
+    <p>Are you sure you want to delete "{{ object.name }}"?</p>
+    <div class="mt-4">
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-destructive">Yes, delete</button>
+            <a href="{% url 'example_list' %}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+#} {% endcomment %}
